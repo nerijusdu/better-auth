@@ -1,0 +1,37 @@
+﻿@page "/android"
+@using BetterAuth.Services
+@inject IBroadcastingService broadcastingService;
+@inject ISmsService smsService;
+
+
+<input placeholder="Input device key" @bind="deviceKey"/>
+<button @onclick="TestAndSave">Test and save</button>
+
+<button @onclick="Test">Test message</button>
+<span>@test</span>
+
+@code {
+    private string deviceKey;
+    private string test;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        deviceKey = await broadcastingService.GetKey();
+    }
+
+    private async Task TestAndSave()
+    {
+        await broadcastingService.TestAndSaveKey(deviceKey);
+    }
+
+    private async Task Test()
+    {
+        await broadcastingService.BroadcastMessage(new UdpMessage
+        {
+            Key = deviceKey,
+            Message = "hello world"
+        });
+    }
+}

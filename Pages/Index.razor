@@ -1,0 +1,13 @@
+﻿@page "/"
+@inject NavigationManager navigationManager
+
+@code {
+    protected override void OnInitialized()
+    {
+        var url = "win";
+#if __ANDROID__
+        url = "android";
+#endif
+        navigationManager.NavigateTo(url);
+    }
+}

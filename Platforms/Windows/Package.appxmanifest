@@ -1,0 +1,76 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:desktop="http://schemas.microsoft.com/appx/manifest/desktop/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity
+    Name="AA615A11-50CB-4742-BE8F-72E2B06A87B5"
+    Publisher="CN=User Name"
+    Version="1.0.0.0" />
+
+  <Properties>
+    <DisplayName>BetterAuth</DisplayName>
+    <PublisherDisplayName>Microsoft</PublisherDisplayName>
+    <Logo>Assets\appiconStoreLogo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.19041.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="x-generate"/>
+  </Resources>
+
+  <Applications>
+    <Application Id="App"
+      Executable="$targetnametoken$.exe"
+      EntryPoint="$targetentrypoint$">
+      <Extensions>
+
+        <com:Extension Category="windows.comServer">
+          <com:ComServer>
+            <com:ExeServer Executable="BetterAuth.exe" Arguments="-ToastActivated" DisplayName="Toast activator">
+              <com:Class Id="aa823218-0dbb-49d3-b45e-30d8d5a07910" DisplayName="Toast activator"/>
+            </com:ExeServer>
+          </com:ComServer>
+        </com:Extension>
+
+        <desktop:Extension Category="windows.toastNotificationActivation">
+          <desktop:ToastNotificationActivation ToastActivatorCLSID="aa823218-0dbb-49d3-b45e-30d8d5a07910" />
+        </desktop:Extension>
+
+      </Extensions>
+      <uap:VisualElements
+        DisplayName="BetterAuth"
+        Description="BetterAuth"
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\appiconMediumTile.png"
+        Square44x44Logo="Assets\appiconLogo.png">
+        <uap:DefaultTile
+          Wide310x150Logo="Assets\appiconWideTile.png"
+          Square71x71Logo="Assets\appiconSmallTile.png"
+          Square310x310Logo="Assets\appiconLargeTile.png"
+          ShortName="BetterAuth">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo"/>
+            <uap:ShowOn Tile="wide310x150Logo"/>
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile >
+        <uap:SplashScreen Image="Assets\appiconfgSplashScreen.png" />
+      </uap:VisualElements>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+    <rescap:Capability Name="confirmAppClose"/>
+  </Capabilities>
+
+</Package>

@@ -1,0 +1,52 @@
+﻿@page "/win"
+@using BetterAuth.Services
+@inject IBroadcastingService broadcastingService
+@inject INotificationService notificationService
+
+<h3>Your key: @key</h3>
+
+<button @onclick="GenerateNewKey">New key</button> 
+
+@if(isConnected)
+{
+    <h3>Device connected successfully</h3>
+}
+
+<button @onclick="TestNotification">Send notification</button>
+
+@code {
+    private bool isConnected;
+    private string key;
+    private readonly Random random = new ();
+
+    protected override async Task OnInitializedAsync()
+    {
+        key = await broadcastingService.GetKey();
+        if (string.IsNullOrEmpty(key))
+        {
+            await GenerateNewKey();
+        }
+
+        await base.OnInitializedAsync();
+        await broadcastingService.StartListening((deviceKey) => 
+        { 
+            if (key == deviceKey)
+            {
+                isConnected = true;
+                StateHasChanged();
+            }
+        });
+    }
+
+    private async Task GenerateNewKey()
+    {
+        key = random.NextInt64(100000, 999999).ToString();
+        await broadcastingService.SaveKey(key);
+        await broadcastingService.GetKey();
+    }
+
+    private void TestNotification()
+    {
+        notificationService.ShowNotification("test", "you clicked");
+    }
+}
