@@ -25,9 +25,6 @@ namespace BetterAuth
 			builder.Services.AddSingleton<WeatherForecastService>();
 			builder.Services.AddSingleton<IBroadcastingService, BroadcastingService>();
 			builder.Services.AddSingleton<IStorageService, StorageService>();
-#if __ANDROID__
-			builder.Services.AddSingleton<ISmsService, Platforms.Android.SmsService>();
-#endif
 
 #if WINDOWS
 			builder.Services.AddSingleton<INotificationService, Platforms.Windows.NotificationService>();

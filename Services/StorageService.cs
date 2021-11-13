@@ -20,6 +20,12 @@ public class StorageService : IStorageService
         return JsonSerializer.Deserialize<T>(strValue);
     }
 
+    public Task RemoveItem(string key)
+    {
+        SecureStorage.Remove(key);
+        return Task.CompletedTask;
+    }
+
     public async Task SaveValue<T>(string key, T value)
     {
         var strValue = JsonSerializer.Serialize(value);

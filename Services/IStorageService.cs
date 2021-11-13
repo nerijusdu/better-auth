@@ -10,4 +10,5 @@ public interface IStorageService
 {
     Task SaveValue<T>(string key, T value);
     Task<T> GetValue<T>(string key);
+    Task RemoveItem(string key);
 }

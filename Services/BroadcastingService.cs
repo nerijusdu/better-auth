@@ -21,7 +21,7 @@ internal class BroadcastingService : IBroadcastingService
 
     public async Task<string> GetKey()
     {
-        var key = await _storageService.GetValue<string>("userKey");
+        var key = await _storageService.GetValue<string>(Constants.UserKey);
         if (!string.IsNullOrEmpty(key))
         {
             _key = key;
@@ -32,7 +32,7 @@ internal class BroadcastingService : IBroadcastingService
 
     public Task SaveKey(string key)
     {
-        return _storageService.SaveValue("userKey", key);
+        return _storageService.SaveValue(Constants.UserKey, key);
     }
 
     public async Task<bool> TestAndSaveKey(string key)
@@ -40,7 +40,7 @@ internal class BroadcastingService : IBroadcastingService
         await SaveKey(key);
         await BroadcastMessage(new UdpMessage
         {
-            Type = "Handshake",
+            Type = Constants.MsgTypeHanshake,
             Key = key
         });
         return true;
@@ -54,12 +54,7 @@ internal class BroadcastingService : IBroadcastingService
 
     public async Task BroadcastMessage(string messageText)
     {
-        using var client = new UdpClient();
-        client.EnableBroadcast = true;
-        var endpoint = new IPEndPoint(IPAddress.Broadcast, 15000);
-        var message = Encoding.ASCII.GetBytes(messageText);
-        await client.SendAsync(message, message.Length, endpoint);
-        client.Close();
+        await UdpBroadcaster.BroadcastMessage(messageText);
     }
 
     public async Task StartListening(Action<string> handshake = null)
@@ -72,7 +67,7 @@ internal class BroadcastingService : IBroadcastingService
             {
                 return;
             }
-            if (messageObj.Type == "Handshake")
+            if (messageObj.Type == Constants.MsgTypeHanshake)
             {
                 handshake?.Invoke(messageObj.Key);
                 _notificationService.ShowNotification("Device connected", $"New device connected with key {messageObj.Key}");

@@ -1,24 +1,36 @@
 ﻿@page "/android"
+@using BetterAuth.Models
 @using BetterAuth.Services
 @inject IBroadcastingService broadcastingService;
-@inject ISmsService smsService;
+@inject IStorageService storageService;
 
 
-<input placeholder="Input device key" @bind="deviceKey"/>
+<input placeholder="Input device key" type="number" @bind="deviceKey"/>
 <button @onclick="TestAndSave">Test and save</button>
 
-<button @onclick="Test">Test message</button>
-<span>@test</span>
+<br />
+
+<input placeholder="Keywords (Separated by ;)" @bind="keywords"/>
+<input placeholder="Senders (Separated by ;)" @bind="senders"/>
+<button @onclick="Save">Save</button>
 
 @code {
     private string deviceKey;
     private string test;
+    private string keywords;
+    private string senders;
 
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
 
         deviceKey = await broadcastingService.GetKey();
+        var settings = await storageService.GetValue<SmsSettings>(Constants.SmsSettings);
+        if (settings != null)
+        {
+            keywords = string.Join(";", settings.Keywords);
+            senders = string.Join(";", settings.Senders);
+        }
     }
 
     private async Task TestAndSave()
@@ -26,12 +38,12 @@
         await broadcastingService.TestAndSaveKey(deviceKey);
     }
 
-    private async Task Test()
+    private async Task Save()
     {
-        await broadcastingService.BroadcastMessage(new UdpMessage
+        await storageService.SaveValue(Constants.SmsSettings, new SmsSettings
         {
-            Key = deviceKey,
-            Message = "hello world"
+            Keywords = (keywords ?? "").ToLower().Split(";").Select(x => x.Trim()).ToList(),
+            Senders = (senders ?? "").ToLower().Split(";").Select(x => x.Trim()).ToList()
         });
     }
 }

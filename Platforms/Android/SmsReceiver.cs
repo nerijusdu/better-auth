@@ -2,11 +2,14 @@
 using Android.Content;
 using Android.Runtime;
 using Android.Telephony;
+using BetterAuth.Models;
+using BetterAuth.Services;
 using Java.Lang;
-using Microsoft.Maui.Controls;
 using System;
 using System.Linq;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace BetterAuth.Platforms.Android;
 
@@ -15,44 +18,63 @@ namespace BetterAuth.Platforms.Android;
 public class SmsReceiver : BroadcastReceiver
 {
     private const string IntentAction = "android.provider.Telephony.SMS_RECEIVED";
-    private static readonly string Sender = "";
-    private static readonly string[] OtpMessageBodyKeywordSet = { "verification", "code", "authentication" };
 
-    public override void OnReceive(Context context, Intent intent)
+    public override async void OnReceive(Context context, Intent intent)
     {
+
         try
         {
             if (intent.Action != IntentAction) return;
+
             var bundle = intent.Extras;
             if (bundle == null) return;
+
             var pdus = bundle.Get("pdus");
             var castedPdus = JNIEnv.GetArray<Java.Lang.Object>(pdus.Handle);
             var msgs = new SmsMessage[castedPdus.Length];
-            var sb = new StringBuilder();
             string sender = null;
+
+            var storageService = new StorageService();
+            var settings = storageService.GetValue<SmsSettings>(Constants.SmsSettings).Result;
+            var key = await storageService.GetValue<string>(Constants.UserKey);
+
             for (var i = 0; i < msgs.Length; i++)
             {
                 var bytes = new byte[JNIEnv.GetArrayLength(castedPdus[i].Handle)];
                 JNIEnv.CopyArray(castedPdus[i].Handle, bytes);
                 var format = bundle.GetString("format");
                 msgs[i] = SmsMessage.CreateFromPdu(bytes, format);
-                if (sender == null)
-                {
-                    sender = msgs[i].OriginatingAddress;
-                }
-                sb.Append(string.Format("SMS From: {0}{1}Body: {2}{1}", msgs[i].OriginatingAddress, System.Environment.NewLine, msgs[i].MessageBody));
-
+                sender ??= msgs[i].OriginatingAddress;
                 var msgBody = msgs[i].MessageBody;
-                // TODO: if (!sender.Contains(Sender)) return;
-                var foundKeyword = OtpMessageBodyKeywordSet.Any(k => msgBody.Contains(k));
-                //if (!foundKeyword) return;
 
-                MessagingCenter.Send(Microsoft.Maui.MauiApplication.Current, "OtpReceived", msgBody);
+                if (string.IsNullOrEmpty(key) || !MatchSenderAdnKeywords(sender, msgBody, settings))
+                {
+                    return;
+                }
+
+                await UdpBroadcaster.BroadcastMessage(JsonSerializer.Serialize(new UdpMessage
+                {
+                    Key = key,
+                    Message = ParseCode(msgBody),
+                    Type = Constants.MsgTypeCode
+                }));
             }
         }
         catch (System.Exception ex)
         {
             Console.WriteLine(ex.ToString());
         }
+    }
+
+    private bool MatchSenderAdnKeywords(string sender, string msgBody, SmsSettings settings)
+    {
+        var foundSender = (settings?.Senders ?? Array.Empty<string>()).Contains(sender.ToLower());
+        var foundKeywords = (settings?.Keywords ?? Array.Empty<string>()).Any(k => msgBody.ToLower().Contains(k));
+        return foundSender && foundKeywords;
+    }
+
+    private string ParseCode(string messageText)
+    {
+        return new Regex(@"(\d+)").Match(messageText).Groups[1].Value;
     }
 }

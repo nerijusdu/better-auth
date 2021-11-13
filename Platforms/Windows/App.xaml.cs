@@ -3,8 +3,10 @@ using Microsoft.Maui;
 using Microsoft.Maui.Hosting;
 using Microsoft.UI.Xaml;
 using Windows.ApplicationModel;
+using Windows.Foundation;
 using Windows.System;
 using Windows.UI.Core.Preview;
+using Windows.UI.ViewManagement;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -23,6 +25,18 @@ namespace BetterAuth.WinUI
         public App()
         {
             this.InitializeComponent();
+
+            Microsoft.Maui.Handlers.WindowHandler.WindowMapper.Add(nameof(IWindow), (handler, view) =>
+            {
+                var nativeWindow = handler.NativeView;
+                nativeWindow.Activate();
+                IntPtr windowHandle = PInvoke.User32.GetActiveWindow();
+
+                PInvoke.User32.SetWindowPos(windowHandle, 
+                    PInvoke.User32.SpecialWindowHandles.HWND_TOP,
+                    0, 0, 300, 300,  // width and height are ints
+                    PInvoke.User32.SetWindowPosFlags.SWP_NOMOVE);
+            });
         }
 
         protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
